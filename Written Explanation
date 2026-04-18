@@ -1,0 +1,31 @@
+System Overview & Agent Reasoning
+
+The proposed AI agent is built on a multi-step agentic loop powered by a large language model (GPT-4 / Gemini 1.5
+Pro) orchestrated through LangChain / LangGraph. When a user sends a message on the shopping platform, it first
+passes through an Input Processor and Validator module that performs NLP tokenisation, intent extraction,
+input-length checks, XSS sanitisation, and rate-limit enforcement. Clean input is forwarded to the LLM Reasoning
+Engine, which maintains conversational memory (short-term via ConversationBufferMemory and long-term via a
+Redis-backed store) and invokes registered tools using a ReAct (Reason + Act) prompting strategy. The agent first
+generates a chain-of-thought plan, decides which tool or backend to call, executes the tool, observes the result, and
+iterates until it has enough information to produce a final answer. This loop is managed by the LangGraph state
+machine, which tracks each agent step and enforces maximum-iteration guards to prevent infinite loops.
+The Intent Classifier (a fine-tuned BERT / zero-shot classification head) categorises every query into one of three
+buckets: Informational (policy, shipping, returns), Operational (live order status, account details, refund initiation), or
+Escalation (complaints, sensitive issues, repeated failures). This classification drives the routing decision – ensuring
+each query touches only the relevant backend, reducing latency and protecting sensitive APIs from unnecessary calls
+
+
+Backend Service Interaction & Response Synthesis
+
+For Informational queries, the agent invokes the RAG (Retrieval-Augmented Generation) pipeline: the query is
+embedded using OpenAI text-embedding-3-small, searched against a FAISS vector store containing indexed policy
+documents, FAQs, and delivery SLAs, and the top-k chunks are injected into the LLM prompt as context. For
+Operational queries, the agent first validates the provided Order ID (regex format check) and verifies the user's auth
+token via the Auth Service. Only after successful validation does it call the Order Service (REST API to
+order-management DB), Account Service (customer profile/CRM), or Payment Service (refund/transaction history) –
+each exposed as a LangChain Tool. All retrieved data flows into the Response Aggregator, which ranks and merges
+partial results, then passes them to the Output Formatter to produce a structured JSON payload (rendered as a rich
+card or plain text in the UI). For Escalation, the Escalation Engine evaluates rule-based triggers (e.g., 3+ failed order
+lookups, negative sentiment score below threshold via a fine-tuned DistilBERT sentiment model) and, when triggered,
+hands off to a human agent queue via a Zendesk / Freshdesk webhook, attaching the full conversation transcript for
+context.
