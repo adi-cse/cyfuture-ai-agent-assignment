@@ -1,0 +1,45 @@
+AI / LLM Layer
+OpenAI GPT / LLaMA / Gemini
+For understanding + response generation
+LangChain / LlamaIndex
+For agent orchestration and tool calling
+
+
+Retrieval
+FAISS / Pinecone / Weaviate
+Vector database for knowledge search
+Sentence Transformers
+For embeddings
+
+Backend Integration
+FastAPI / Flask
+To expose APIs for agent interaction
+REST APIs / GraphQL
+For order & account services
+
+
+
+Database
+PostgreSQL / MongoDB
+Store user, orders, transactions
+
+
+Validation & Security
+JWT / OAuth
+User authentication
+Input validation libraries (Pydantic)
+
+
+Agent Decision System
+LangGraph / CrewAI
+Multi-step reasoning and workflow control
+
+
+Monitoring & Logging
+Prometheus / ELK Stack
+Track agent performance
+
+
+The proposed system uses an AI agent to handle both informational and operational queries in an online shopping platform. The agent first processes user input using an LLM and classifies the intent into informational or operational categories. For informational queries, it retrieves answers from a knowledge base using a Retrieval-Augmented Generation (RAG) approach. For operational queries, the agent validates user input such as order ID and interacts with backend services like order and account APIs to fetch real-time data.
+
+The system includes a decision-making layer that determines whether sufficient information is available and which service to call. It also incorporates an escalation mechanism that detects complex or sensitive issues and transfers them to a human agent along with the conversation context. This architecture ensures accurate responses, secure data handling, and efficient customer support through intelligent automation.
